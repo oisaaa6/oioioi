@@ -219,16 +219,16 @@ commonSection:Button("", function()
   loadstring(game:HttpGet("https://raw.githubusercontent.com/oisaaa6/oliyUI/refs/heads/main/UI"))()
  
     if not commonSuccess then
-        StarterGui:SetCore("SendNotification", {Title = "错误", Text = "BP俄亥俄加载失败：" .. err, Duration = 5})
+        StarterGui:SetCore("SendNotification", {Title = "错误", Text = "BP伐木大亨加载失败：" .. err, Duration = 5})
     end
 end)
 
-local commonSection = UITab7:section("『BP伐木大亨』", true)
+local commonSection = UITab7:section("『BP力量传奇』", true)
 commonSection:Button("", function()
   loadstring(game:HttpGet("https://raw.githubusercontent.com/oisaaa6/OvOhub/refs/heads/main/Oliyhub"))()
  
     if not commonSuccess then
-        StarterGui:SetCore("SendNotification", {Title = "错误", Text = "BP俄亥俄加载失败：" .. err, Duration = 5})
+        StarterGui:SetCore("SendNotification", {Title = "错误", Text = "BP力量传奇加载失败：" .. err, Duration = 5})
     end
 end)
 
