@@ -1,1 +1,235 @@
 
+local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local RunService = game:GetService("RunService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local RbxAnalyticsService = game:GetService("RbxAnalyticsService")
+local LocalPlayer = Players.LocalPlayer
+local CurrentCamera = workspace.CurrentCamera
+
+StarterGui:SetCore("SendNotification", {
+    Title = "正在初始化",
+    Text = "开始倒计时",
+    Duration = 5,
+})
+wait(2)
+
+local countdownTexts = {"三", "二", "一"}
+for _, text in ipairs(countdownTexts) do
+    StarterGui:SetCore("SendNotification", {
+        Title = "倒计时",
+        Text = text,
+        Duration = 5,
+    })
+    wait(2)
+end
+
+print("Anti Afk On")
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0), CurrentCamera.CFrame)
+    wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0), CurrentCamera.CFrame)
+end)
+
+StarterGui:SetCore("SendNotification", {
+    Title = "反挂机已自动开启",
+    Text = "被踢出服务器的概率已降低",
+    Duration = 5,
+})
+wait(2)
+
+StarterGui:SetCore("SendNotification", {
+    Title = "启动成功",
+    Text = "您好，" .. LocalPlayer.Name .. "！欢迎使用BP脚本",
+    Duration = 5,
+})
+
+-- 3. 自适应水印模块
+local function createAdaptiveWatermark()
+    -- 移除旧水印（避免重复创建）
+    local oldWatermark = game.CoreGui:FindFirstChild("AUG_Watermark")
+    if oldWatermark then
+        oldWatermark:Destroy()
+    end
+
+    -- 创建水印UI
+    local watermarkGui = Instance.new("ScreenGui")
+    watermarkGui.Name = "AUG_Watermark"
+    watermarkGui.Parent = game.CoreGui
+    watermarkGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    watermarkGui.ResetOnSpawn = false
+
+    local watermarkText = Instance.new("TextLabel")
+    watermarkText.Name = "WatermarkText"
+    watermarkText.Parent = watermarkGui
+    watermarkText.Text = "BP脚本"
+    watermarkText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    watermarkText.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    watermarkText.TextStrokeTransparency = 0.3
+    watermarkText.Font = Enum.Font.GothamBold
+    watermarkText.BackgroundTransparency = 1
+    watermarkText.AnchorPoint = Vector2.new(1, 0)
+    watermarkText.Position = UDim2.new(1, -10, 0, 10)
+    watermarkText.TextXAlignment = Enum.TextXAlignment.Right
+
+    -- 初始化尺寸（随屏幕自适应）
+    local function updateWatermarkSize()
+        local screenSize = CurrentCamera.ViewportSize
+        watermarkText.TextSize = math.floor(screenSize.Y * 0.02)
+        watermarkText.Size = UDim2.new(0, watermarkText.TextBounds.X + 20, 0, watermarkText.TextBounds.Y + 10)
+    end
+    updateWatermarkSize()
+
+    -- 监听屏幕尺寸变化，实时更新水印
+    CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateWatermarkSize)
+end
+createAdaptiveWatermark()
+
+-- 4. FPS与时间显示模块（修复getParent和wait参数错误）
+local LBLG = Instance.new("ScreenGui")
+LBLG.Name = "LBLG"
+LBLG.Parent = game.CoreGui  -- 修复：指定正确父对象
+LBLG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+LBLG.Enabled = true
+
+local LBL = Instance.new("TextLabel")
+LBL.Name = "LBL"
+LBL.Parent = LBLG  -- 修复：指定正确父对象
+LBL.BackgroundColor3 = Color3.new(1, 1, 1)
+LBL.BackgroundTransparency = 1
+LBL.BorderColor3 = Color3.new(0, 0, 0)
+LBL.Position = UDim2.new(0.75, 0, 0.010, 0)
+LBL.Size = UDim2.new(0, 133, 0, 30)
+LBL.Font = Enum.Font.GothamSemibold
+LBL.Text = "TextLabel"
+LBL.TextColor3 = Color3.new(1, 1, 1)
+LBL.TextScaled = true
+LBL.TextSize = 14
+LBL.TextWrapped = true
+LBL.Visible = true
+
+local FpsLabel = LBL
+local LastIteration, Start
+local FrameUpdateTable = {}
+
+-- 修复：wait参数改为数字，移除字符串引号
+StarterGui:SetCore("SendNotification", {Title = "BP脚本", Text = "载入中", Duration = 2})
+wait(3)  -- 原"3"改为数字3
+StarterGui:SetCore("SendNotification", {Title = "BP脚本", Text = "半缝合", Duration = 2})
+wait(2)  -- 原"2"改为数字2
+StarterGui:SetCore("SendNotification", {Title = "BP脚本", Text = "1", Duration = 2})
+wait(2)
+StarterGui:SetCore("SendNotification", {Title = "BP脚本", Text = "载入成功", Duration = 3})
+
+-- 时间更新函数（保留FPS计算逻辑，可按需展示）
+local function HeartbeatUpdate()
+    LastIteration = tick()
+    -- FPS计算逻辑（若需展示，可在Text中添加）
+    for Index = #FrameUpdateTable, 1, -1 do
+        FrameUpdateTable[Index + 1] = (FrameUpdateTable[Index] >= LastIteration - 1) and FrameUpdateTable[Index] or nil
+    end
+    FrameUpdateTable[1] = LastIteration
+    local CurrentFPS = (tick() - Start >= 1 and #FrameUpdateTable) or (#FrameUpdateTable / (tick() - Start))
+    CurrentFPS = CurrentFPS - CurrentFPS % 1
+
+    -- 更新时间显示（优化时间格式，添加秒）
+    local currentTime = os.date("%H时%M分%S秒")
+    FpsLabel.Text = "当前时间：" .. currentTime  -- 若需显示FPS，可改为 "时间："..currentTime.." | FPS："..CurrentFPS
+end
+Start = tick()
+RunService.Heartbeat:Connect(HeartbeatUpdate)
+
+-- 5. 功能UI与信息展示模块（修复变量重复定义、补充安全判断）
+-- 加载外部UI（添加安全判断，避免加载失败崩溃）
+local success, xynbui = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/xcmsnd/QQ515966991/refs/heads/main/Ware_UI%20AL%E9%AB%98%E4%BB%BFV1.0.lua"))()
+end)
+if not success then
+    StarterGui:SetCore("SendNotification", {Title = "错误", Text = "UI脚本加载失败！", Duration = 5})
+    warn("UI加载失败：" .. tostring(xynbui))
+    return  
+end
+
+local win = xynbui:new("BP脚本")
+
+-
+local UITab1 = win:Tab("信息", "16060333448")
+local aboutSection1 = UITab1:section("作者信息", false)
+aboutSection1:Label("OliyOvO制作")
+aboutSection1:Label("更新吃作者")
+aboutSection1:Label("忠爱Lutzauto")
+aboutSection1:Label("半缝合")
+aboutSection1:Label("谁敢圈钱我给你码杀了")
+aboutSection1:Label("感谢游玩")
+
+local UITab2 = win:Tab("作者的感谢", "16060333448")  -- 修复：新标签页用新变量名
+local aboutSection2 = UITab2:section("作者的感谢", false)
+aboutSection2:Label("Lutzauto我爱你")
+
+local aboutSection3 = UITab2:section("你的信息", false)  -- 修复：新section用新变量名
+-- 修复：判断identifyexecutor是否存在，避免报错
+local executorName = typeof(identifyexecutor) == "function" and identifyexecutor() or "未知注入器"
+-- 修复：判断角色是否存在，避免角色未加载时报错
+local characterName = LocalPlayer.Character and LocalPlayer.Character.Name or "角色未加载"
+
+aboutSection3:Label("你的注入器：" .. executorName)
+aboutSection3:Label("你的账号年龄：" .. LocalPlayer.AccountAge .. "天")
+aboutSection3:Label("你的注入器：" .. executorName)
+aboutSection3:Label("你的用户名：" .. characterName)
+aboutSection3:Label("你现在的服务器名称：" .. MarketplaceService:GetProductInfo(game.PlaceId).Name)
+aboutSection3:Label("你现在的服务器ID：" .. game.GameId)
+aboutSection3:Label("你的用户ID：" .. LocalPlayer.UserId)
+aboutSection3:Label("获取客户端ID：" .. RbxAnalyticsService:GetClientId())
+
+aboutSection3:Toggle("脚本框架变小一点", "", false, function(state)
+    local frostyUI = game.CoreGui:FindFirstChild("frosty")
+    if frostyUI and frostyUI:FindFirstChild("Main") then
+        frostyUI.Main.Style = state and "DropShadow" or "Custom"
+    end
+end)
+
+aboutSection3:Button("关闭脚本", function()
+    local frostyUI = game.CoreGui:FindFirstChild("frosty")
+    if frostyUI then
+        frostyUI:Destroy()
+    end
+    
+    local oldWatermark = game.CoreGui:FindFirstChild("AUG_Watermark")
+    if oldWatermark then
+        oldWatermark:Destroy()
+    end
+    local timeUI = game.CoreGui:FindFirstChild("LBLG")
+    if timeUI then
+        timeUI:Destroy()
+    end
+end)
+
+aboutSection3:Label("BP脚本")
+aboutSection3:Label("作者QQ：1622103455")
+aboutSection3:Button("点击复制作者QQ群", function()
+    setclipboard("7734068321")  -- 修复：原群号多一位，按文本显示修正为7734068321
+    StarterGui:SetCore("SendNotification", {Title = "复制成功", Text = "QQ群号已复制到剪贴板", Duration = 3})
+end)
+
+-- 通用功能标签页
+local UITab7 = win:Tab("『脚本』", "7734068321")
+local commonSection = UITab7:section("『BP伐木大亨』", true)
+commonSection:Button("", function()
+  loadstring(game:HttpGet("https://raw.githubusercontent.com/oisaaa6/oliyUI/refs/heads/main/UI"))()
+ 
+    if not commonSuccess then
+        StarterGui:SetCore("SendNotification", {Title = "错误", Text = "BP俄亥俄加载失败：" .. err, Duration = 5})
+    end
+end)
+
+local commonSection = UITab7:section("『BP伐木大亨』", true)
+commonSection:Button("", function()
+  loadstring(game:HttpGet("https://raw.githubusercontent.com/oisaaa6/OvOhub/refs/heads/main/Oliyhub"))()
+ 
+    if not commonSuccess then
+        StarterGui:SetCore("SendNotification", {Title = "错误", Text = "BP俄亥俄加载失败：" .. err, Duration = 5})
+    end
+end)
+
+
